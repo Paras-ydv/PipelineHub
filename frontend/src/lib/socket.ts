@@ -1,0 +1,54 @@
+import { io, Socket } from 'socket.io-client';
+import { usePipelineStore } from '@/store/pipeline.store';
+
+let socket: Socket | null = null;
+
+export function getSocket(): Socket {
+  if (!socket) {
+    socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+    });
+  }
+  return socket;
+}
+
+export function initSocketListeners() {
+  const s = getSocket();
+  const store = usePipelineStore.getState();
+
+  s.on('job:created', (job) => {
+    store.upsertJob(job);
+    store.addEvent({ type: 'job_created', message: `New job: ${job.name}` });
+  });
+
+  s.on('job:update', (job) => {
+    store.upsertJob(job);
+  });
+
+  s.on('worker:update', (worker) => {
+    store.upsertWorker(worker);
+  });
+
+  s.on('queue:update', (metrics) => {
+    store.setQueueMetrics(metrics);
+  });
+
+  s.on('webhook:received', (data) => {
+    store.addEvent({ type: 'webhook', message: `Webhook: ${data.event} on ${data.repo}` });
+  });
+
+  s.on('deployment:update', (data) => {
+    store.addEvent({ type: 'deployment', message: `Deployed ${data.version} to ${data.environment}` });
+  });
+
+  return s;
+}
+
+export function disconnectSocket() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+}
