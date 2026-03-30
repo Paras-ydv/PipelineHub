@@ -7,9 +7,27 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { isOriginAllowed } from '../../main';
+
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  // Must use a function — wildcard + credentials is rejected by browsers
+  cors: {
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (isOriginAllowed(origin)) return callback(null, true);
+      callback(new Error(`WS CORS: origin "${origin}" not allowed`));
+    },
+    credentials: true,
+  },
   namespace: '/',
+  transports: ['websocket', 'polling'],
 })
 export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
