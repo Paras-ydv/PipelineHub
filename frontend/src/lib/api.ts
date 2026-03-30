@@ -73,7 +73,10 @@ export const deploymentsApi = {
 export const demoApi = {
   status: () => api.get('/demo/status'),
   toggle: (enabled: boolean) => api.post('/demo/toggle', { enabled }),
-  trigger: (repositoryId: string) => api.post(`/demo/trigger/${repositoryId}`),
+  trigger: (repositoryId: string, eventType?: string, branch?: string) =>
+    api.post(`/demo/trigger/${repositoryId}`, { eventType, branch }),
+  highLoad: (repositoryId?: string) => api.post('/demo/high-load', { repositoryId }),
+  story: () => api.post('/demo/story'),
 };
 
 export const webhooksApi = {

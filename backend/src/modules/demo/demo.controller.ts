@@ -14,5 +14,17 @@ export class DemoController {
   toggle(@Body('enabled') enabled: boolean) { return this.svc.setEnabled(enabled); }
 
   @Post('trigger/:repositoryId')
-  trigger(@Param('repositoryId') repositoryId: string) { return this.svc.triggerForRepo(repositoryId); }
+  trigger(
+    @Param('repositoryId') repositoryId: string,
+    @Body('eventType') eventType?: string,
+    @Body('branch') branch?: string,
+  ) { return this.svc.triggerForRepo(repositoryId, eventType, branch); }
+
+  @Post('high-load')
+  highLoad(@Body('repositoryId') repositoryId?: string) {
+    return this.svc.triggerHighLoad(repositoryId);
+  }
+
+  @Post('story')
+  story() { return this.svc.runStoryMode(); }
 }

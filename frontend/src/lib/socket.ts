@@ -43,6 +43,18 @@ export function initSocketListeners() {
     store.addEvent({ type: 'deployment', message: `Deployed ${data.version} to ${data.environment}` });
   });
 
+  s.on('demo:story_started', (data) => {
+    store.addEvent({ type: 'webhook', message: `Story mode started — ${data.steps} steps` });
+  });
+
+  s.on('demo:story_step', (data) => {
+    store.addEvent({ type: 'webhook', message: `Story step ${data.step}/${data.total}: ${data.eventType} on ${data.repo}` });
+  });
+
+  s.on('demo:story_completed', () => {
+    store.addEvent({ type: 'deployment', message: 'Story mode completed ✓' });
+  });
+
   return s;
 }
 
