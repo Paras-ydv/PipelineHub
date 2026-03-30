@@ -15,7 +15,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/package.json ./
-# Regenerate Prisma client for the correct platform
 RUN npx prisma generate
 EXPOSE 4000
+# cache-bust: 2024-03-30
 CMD ["node", "dist/main"]
