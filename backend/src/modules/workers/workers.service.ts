@@ -1,12 +1,73 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { WorkerStatus, RepoLanguage } from '@prisma/client';
 import { AppGateway } from '../gateway/app.gateway';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
-export class WorkersService {
+export class WorkersService implements OnModuleInit {
   constructor(private prisma: PrismaService, private gateway: AppGateway) {}
+
+  async onModuleInit() {
+    // Seed workers
+    for (const w of [
+      { name: 'worker-python',  language: RepoLanguage.PYTHON },
+      { name: 'worker-node',    language: RepoLanguage.NODE },
+      { name: 'worker-java',    language: RepoLanguage.JAVA },
+      { name: 'worker-general', language: RepoLanguage.GENERAL },
+    ]) {
+      await this.prisma.worker.upsert({
+        where: { name: w.name },
+        update: {},
+        create: { ...w, status: WorkerStatus.IDLE },
+      });
+    }
+
+    // Seed admin user
+    const passwordHash = await bcrypt.hash('admin123', 10);
+    const admin = await this.prisma.user.upsert({
+      where: { email: 'admin@pipelinehub.dev' },
+      update: {},
+      create: { email: 'admin@pipelinehub.dev', username: 'admin', passwordHash, role: 'ADMIN' },
+    });
+
+    // Seed demo repos
+    for (const r of [
+      { name: 'demo-java-service', owner: 'Paras-ydv', language: RepoLanguage.JAVA,    branch: 'main' },
+      { name: 'demo-python-api',   owner: 'Paras-ydv', language: RepoLanguage.PYTHON,  branch: 'main' },
+      { name: 'api-service',       owner: 'demo-org',  language: RepoLanguage.NODE,    branch: 'main' },
+    ]) {
+      const fullName = `${r.owner}/${r.name}`;
+      await this.prisma.repository.upsert({
+        where: { fullName },
+        update: {},
+        create: {
+          ...r, fullName, userId: admin.id,
+          webhookSecret: `secret-${Math.random().toString(36).slice(2)}`,
+          autoDemo: true,
+          isActive: true,
+          eventTypes: ['push', 'pull_request', 'release'],
+          environment: 'production',
+          pipelineConfig: { stages: ['checkout', 'install', 'build', 'test', 'security_scan', 'package', 'deploy', 'notify'] },
+        },
+      });
+    }
+
+    // Seed default pipeline
+    await this.prisma.pipeline.upsert({
+      where: { id: 'default-pipeline' },
+      update: {},
+      create: {
+        id: 'default-pipeline',
+        name: 'Default Pipeline',
+        isDefault: true,
+        stages: ['checkout', 'install', 'build', 'test', 'security_scan', 'package', 'deploy', 'notify'],
+      },
+    });
+
+    console.log('✅ Seed complete — workers, repos, pipeline ready');
+  }
 
   findAll() {
     return this.prisma.worker.findMany({
