@@ -6,19 +6,9 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
 import { isOriginAllowed } from '../../main';
 
 @WebSocketGateway({
-  // Must use a function — wildcard + credentials is rejected by browsers
   cors: {
     origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
       if (isOriginAllowed(origin)) return callback(null, true);
@@ -57,7 +47,6 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(room).emit(event, data);
   }
 
-  // Typed emitters used across services
   jobUpdate(data: any) { this.emit('job:update', data); }
   jobCreated(data: any) { this.emit('job:created', data); }
   workerUpdate(data: any) { this.emit('worker:update', data); }
