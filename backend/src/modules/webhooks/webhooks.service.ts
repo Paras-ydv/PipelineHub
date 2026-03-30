@@ -20,8 +20,8 @@ export class WebhooksService {
     const repo = await this.prisma.repository.findUnique({ where: { fullName: repoFullName } });
     if (!repo || !repo.isActive) return { status: 'ignored' };
 
-    // Validate signature
-    if (signature && repo.webhookSecret) {
+    // Validate signature only when we have both rawBody and a stored secret
+    if (signature && repo.webhookSecret && rawBody) {
       const expected = `sha256=${createHmac('sha256', repo.webhookSecret).update(rawBody).digest('hex')}`;
       if (signature !== expected) throw new BadRequestException('Invalid signature');
     }

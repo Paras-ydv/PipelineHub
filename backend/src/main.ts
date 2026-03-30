@@ -30,7 +30,7 @@ export function isOriginAllowed(origin: string | undefined): boolean {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true, rawBody: true });
 
   app.use(helmet({ crossOriginEmbedderPolicy: false }));
   app.use(compression());
