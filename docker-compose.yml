@@ -41,7 +41,7 @@ services:
       FRONTEND_URL: http://localhost:3001
       BACKEND_URL: http://localhost:4001
       PORT: 4000
-      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_TOKEN: ${github_token:-}
     depends_on:
       postgres:
         condition: service_healthy
