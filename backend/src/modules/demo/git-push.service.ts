@@ -59,6 +59,8 @@ export class GitPushService {
     language: string;
   }): Promise<{ sha: string; message: string; filename: string } | null> {
     try {
+      const token = repo.githubToken || process.env.GITHUB_TOKEN;
+      if (!token) return null;
       const script = CODE_SCRIPTS[repo.language] || CODE_SCRIPTS.NODE;
       const ts = Date.now().toString();
       const contentIndex = Math.floor(Math.random() * script.contents.length);
@@ -68,7 +70,7 @@ export class GitPushService {
       const filename = script.filename;
 
       const headers = {
-        Authorization: `token ${repo.githubToken}`,
+        Authorization: `token ${token}`,
         'User-Agent': 'PipelineHub-Demo',
         'Content-Type': 'application/json',
       };

@@ -33,18 +33,24 @@ export class WorkersService implements OnModuleInit {
     });
 
     // Seed demo repos
+    const githubToken = process.env.GITHUB_TOKEN || '';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
+    const webhookUrl = `${backendUrl}/api/webhooks/github`;
+
     for (const r of [
-      { name: 'demo-java-service', owner: 'Paras-ydv', language: RepoLanguage.JAVA,    branch: 'main' },
-      { name: 'demo-python-api',   owner: 'Paras-ydv', language: RepoLanguage.PYTHON,  branch: 'main' },
-      { name: 'api-service',       owner: 'demo-org',  language: RepoLanguage.NODE,    branch: 'main' },
+      { name: 'demo-java-service', owner: 'Paras-ydv', language: RepoLanguage.JAVA,   branch: 'main' },
+      { name: 'demo-python-api',   owner: 'Paras-ydv', language: RepoLanguage.PYTHON, branch: 'main' },
+      { name: 'demo-node-app',     owner: 'Paras-ydv', language: RepoLanguage.NODE,   branch: 'main' },
     ]) {
       const fullName = `${r.owner}/${r.name}`;
       await this.prisma.repository.upsert({
         where: { fullName },
-        update: {},
+        update: { githubToken, webhookUrl },
         create: {
           ...r, fullName, userId: admin.id,
+          githubToken,
           webhookSecret: `secret-${Math.random().toString(36).slice(2)}`,
+          webhookUrl,
           autoDemo: true,
           isActive: true,
           eventTypes: ['push', 'pull_request', 'release'],
