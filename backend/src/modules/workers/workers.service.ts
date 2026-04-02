@@ -32,7 +32,6 @@ export class WorkersService implements OnModuleInit {
       create: { email: 'admin@pipelinehub.dev', username: 'admin', passwordHash, role: 'ADMIN' },
     });
 
-    // Seed demo repos
     const githubToken = process.env.GITHUB_TOKEN || '';
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:4000';
     const webhookUrl = `${backendUrl}/api/webhooks/github`;
@@ -58,6 +57,16 @@ export class WorkersService implements OnModuleInit {
           pipelineConfig: { stages: ['checkout', 'install', 'build', 'test', 'security_scan', 'package', 'deploy', 'notify'] },
         },
       });
+    }
+
+    // Remove fake repos
+    await this.prisma.repository.deleteMany({
+      where: { owner: 'demo-org' },
+    });
+
+    // Remove old fake repos from previous seeds
+    for (const fullName of ['demo-org/api-service', 'demo-org/ml-pipeline', 'demo-org/spring-backend']) {
+      await this.prisma.repository.deleteMany({ where: { fullName } });
     }
 
     // Seed default pipeline

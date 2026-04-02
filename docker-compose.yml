@@ -39,7 +39,9 @@ services:
       REDIS_PORT: 6379
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       FRONTEND_URL: http://localhost:3001
+      BACKEND_URL: http://localhost:4001
       PORT: 4000
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy
