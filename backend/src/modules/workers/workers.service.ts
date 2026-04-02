@@ -81,7 +81,10 @@ export class WorkersService implements OnModuleInit {
       },
     });
 
-    console.log('✅ Seed complete — workers, repos, pipeline ready');
+    console.log(`✅ Seed complete — workers, repos, pipeline ready`);
+    console.log(`   BACKEND_URL: ${backendUrl}`);
+    console.log(`   Webhook URL: ${webhookUrl}`);
+    console.log(`   GitHub token: ${githubToken ? 'set' : 'NOT SET — real pushes disabled'}`);
   }
 
   findAll() {
