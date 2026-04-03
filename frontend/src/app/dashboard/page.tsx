@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { usePipelineStore } from '@/store/pipeline.store';
-import { jobsApi, workersApi, queueApi, demoApi } from '@/lib/api';
+import { jobsApi, workersApi, queueApi } from '@/lib/api';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { JobsTable } from '@/components/dashboard/JobsTable';
 import { WorkerGrid } from '@/components/dashboard/WorkerGrid';
@@ -11,19 +11,22 @@ import { DemoToggle } from '@/components/dashboard/DemoToggle';
 import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
-  const { setJobs, setWorkers, setQueueMetrics, setStats } = usePipelineStore();
+  const { jobs, upsertJob, setWorkers, setQueueMetrics, setStats } = usePipelineStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [jobs, workers, queueMetrics, stats]: any[] = await Promise.all([
-          jobsApi.list({ limit: 20 }),
+        const [apiJobs, workers, queueMetrics, stats]: any[] = await Promise.all([
+          jobsApi.list({ limit: 50 }),
           workersApi.list(),
           queueApi.metrics(),
           jobsApi.stats(),
         ]);
-        setJobs(jobs);
+
+        // Upsert each job individually so WebSocket-added jobs aren't lost
+        for (const job of apiJobs) upsertJob(job);
+
         setWorkers(workers);
         setQueueMetrics(queueMetrics);
         setStats(stats);
@@ -33,10 +36,12 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
+
     load();
-    const interval = setInterval(load, 15000);
+    // Poll every 5s so new jobs appear quickly
+    const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
-  }, [setJobs, setWorkers, setQueueMetrics, setStats]);
+  }, [upsertJob, setWorkers, setQueueMetrics, setStats]);
 
   if (loading) {
     return (
