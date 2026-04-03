@@ -36,7 +36,10 @@ export function initSocketListeners() {
   });
 
   s.on('webhook:received', (data) => {
-    store.addEvent({ type: 'webhook', message: `Webhook: ${data.event} on ${data.repo}` });
+    const githubUrl = data.sha
+      ? `https://github.com/${data.repo}/compare/${data.sha}~1...${data.sha}`
+      : `https://github.com/${data.repo}`;
+    store.addEvent({ type: 'webhook', message: `${data.event} on ${data.repo}${data.sha ? ` · ${data.sha.slice(0,7)}` : ''}`, githubUrl });
   });
 
   s.on('deployment:update', (data) => {

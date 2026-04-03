@@ -47,7 +47,7 @@ interface PipelineState {
   workers: Worker[];
   queueMetrics: QueueMetrics;
   stats: { total: number; queued: number; running: number; success: number; failed: number };
-  recentEvents: Array<{ id: string; type: string; message: string; timestamp: string }>;
+  recentEvents: Array<{ id: string; type: string; message: string; timestamp: string; githubUrl?: string }>;
   setJobs: (jobs: Job[]) => void;
   upsertJob: (job: Job) => void;
   setWorkers: (workers: Worker[]) => void;

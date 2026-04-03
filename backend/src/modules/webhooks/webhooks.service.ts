@@ -47,7 +47,7 @@ export class WebhooksService {
       language: repo.language,
     });
 
-    this.gateway.webhookReceived({ event, repo: repo.fullName, jobId: job.id });
+    this.gateway.webhookReceived({ event, repo: repo.fullName, jobId: job.id, sha: commitHash });
     return { status: 'queued', jobId: job.id };
   }
 

@@ -69,3 +69,15 @@ export const EVENT_ICONS: Record<string, string> = {
   webhook: '🔗',
   deployment: '🚀',
 };
+
+export function githubCommitUrl(owner: string, repo: string, sha: string) {
+  return `https://github.com/${owner}/${repo}/commit/${sha}`;
+}
+
+export function githubCompareUrl(owner: string, repo: string, sha: string) {
+  return `https://github.com/${owner}/${repo}/compare/${sha}~1...${sha}`;
+}
+
+export function githubRepoUrl(owner: string, repo: string) {
+  return `https://github.com/${owner}/${repo}`;
+}
