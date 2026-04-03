@@ -90,6 +90,27 @@ export class WorkersService implements OnModuleInit {
       },
     });
 
+    // Cancel stuck QUEUED/RUNNING jobs from previous deploys (BullMQ queue lost on restart)
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const stuck = await this.prisma.job.updateMany({
+        where: {
+          status: { in: ['QUEUED', 'RUNNING'] },
+          createdAt: { lt: oneHourAgo },
+        },
+        data: { status: 'CANCELLED', completedAt: new Date() },
+      });
+      if (stuck.count > 0) console.log(`🧹 Cancelled ${stuck.count} stuck jobs from previous deploy`);
+
+      // Also reset any workers stuck in BUSY state
+      await this.prisma.worker.updateMany({
+        where: { status: WorkerStatus.BUSY },
+        data: { status: WorkerStatus.IDLE, currentJobId: null },
+      });
+    } catch (e) {
+      console.warn('⚠️  Could not clean stuck jobs:', e.message);
+    }
+
     console.log(`✅ Seed complete — workers, repos, pipeline ready`);
     console.log(`   BACKEND_URL: ${backendUrl}`);
     console.log(`   Webhook URL: ${webhookUrl}`);
