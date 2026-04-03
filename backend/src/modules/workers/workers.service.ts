@@ -59,14 +59,23 @@ export class WorkersService implements OnModuleInit {
       });
     }
 
-    // Remove fake repos
-    await this.prisma.repository.deleteMany({
-      where: { owner: 'demo-org' },
-    });
-
-    // Remove old fake repos from previous seeds
-    for (const fullName of ['demo-org/api-service', 'demo-org/ml-pipeline', 'demo-org/spring-backend']) {
-      await this.prisma.repository.deleteMany({ where: { fullName } });
+    // Remove fake repos (delete dependent jobs first to avoid FK violation)
+    try {
+      const fakeRepos = await this.prisma.repository.findMany({
+        where: { owner: 'demo-org' },
+        select: { id: true },
+      });
+      if (fakeRepos.length) {
+        const ids = fakeRepos.map(r => r.id);
+        await this.prisma.buildLog.deleteMany({ where: { job: { repositoryId: { in: ids } } } });
+        await this.prisma.deployment.deleteMany({ where: { repositoryId: { in: ids } } });
+        await this.prisma.job.deleteMany({ where: { repositoryId: { in: ids } } });
+        await this.prisma.webhookEvent.deleteMany({ where: { repositoryId: { in: ids } } });
+        await this.prisma.repository.deleteMany({ where: { id: { in: ids } } });
+        console.log(`🧹 Removed ${fakeRepos.length} fake demo-org repos`);
+      }
+    } catch (e) {
+      console.warn('⚠️  Could not clean fake repos (non-fatal):', e.message);
     }
 
     // Seed default pipeline
