@@ -11,7 +11,7 @@ import { DemoToggle } from '@/components/dashboard/DemoToggle';
 import toast from 'react-hot-toast';
 
 export default function DashboardPage() {
-  const { jobs, upsertJob, setWorkers, setQueueMetrics, setStats } = usePipelineStore();
+  const { setJobs, setWorkers, setQueueMetrics, setStats } = usePipelineStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,10 +23,8 @@ export default function DashboardPage() {
           queueApi.metrics(),
           jobsApi.stats(),
         ]);
-
-        // Upsert each job individually so WebSocket-added jobs aren't lost
-        for (const job of apiJobs) upsertJob(job);
-
+        // Always replace with fresh API data — removes stale cached jobs
+        setJobs(apiJobs);
         setWorkers(workers);
         setQueueMetrics(queueMetrics);
         setStats(stats);
@@ -38,10 +36,9 @@ export default function DashboardPage() {
     };
 
     load();
-    // Poll every 5s so new jobs appear quickly
     const interval = setInterval(load, 5000);
     return () => clearInterval(interval);
-  }, [upsertJob, setWorkers, setQueueMetrics, setStats]);
+  }, [setJobs, setWorkers, setQueueMetrics, setStats]);
 
   if (loading) {
     return (

@@ -16,46 +16,65 @@ export function getSocket(): Socket {
 
 export function initSocketListeners() {
   const s = getSocket();
-  const store = usePipelineStore.getState();
 
+  // Always get fresh store state inside handlers — never use stale closure
   s.on('job:created', (job) => {
+    const store = usePipelineStore.getState();
     store.upsertJob(job);
-    store.addEvent({ type: 'job_created', message: `New job: ${job.name}` });
+    store.addEvent({ type: 'job_created', message: `New job: ${job.repository?.name || job.name}` });
   });
 
   s.on('job:update', (job) => {
-    store.upsertJob(job);
+    usePipelineStore.getState().upsertJob(job);
   });
 
   s.on('worker:update', (worker) => {
-    store.upsertWorker(worker);
+    usePipelineStore.getState().upsertWorker(worker);
   });
 
   s.on('queue:update', (metrics) => {
-    store.setQueueMetrics(metrics);
+    usePipelineStore.getState().setQueueMetrics(metrics);
   });
 
   s.on('webhook:received', (data) => {
     const githubUrl = data.sha
       ? `https://github.com/${data.repo}/compare/${data.sha}~1...${data.sha}`
       : `https://github.com/${data.repo}`;
-    store.addEvent({ type: 'webhook', message: `${data.event} on ${data.repo}${data.sha ? ` · ${data.sha.slice(0,7)}` : ''}`, githubUrl });
+    usePipelineStore.getState().addEvent({
+      type: 'webhook',
+      message: `${data.event} on ${data.repo}${data.sha ? ` · ${data.sha.slice(0, 7)}` : ''}`,
+      githubUrl,
+    });
   });
 
   s.on('deployment:update', (data) => {
-    store.addEvent({ type: 'deployment', message: `Deployed ${data.version} to ${data.environment}` });
+    usePipelineStore.getState().addEvent({
+      type: 'deployment',
+      message: `Deployed ${data.version} to ${data.environment}`,
+    });
   });
 
   s.on('demo:story_started', (data) => {
-    store.addEvent({ type: 'webhook', message: `Story mode started — ${data.steps} steps` });
+    usePipelineStore.getState().addEvent({ type: 'webhook', message: `Story mode started — ${data.steps} steps` });
   });
 
   s.on('demo:story_step', (data) => {
-    store.addEvent({ type: 'webhook', message: `Story step ${data.step}/${data.total}: ${data.eventType} on ${data.repo}` });
+    usePipelineStore.getState().addEvent({
+      type: 'webhook',
+      message: `Story step ${data.step}/${data.total}: ${data.eventType} on ${data.repo}`,
+    });
   });
 
   s.on('demo:story_completed', () => {
-    store.addEvent({ type: 'deployment', message: 'Story mode completed ✓' });
+    usePipelineStore.getState().addEvent({ type: 'deployment', message: 'Story mode completed ✓' });
+  });
+
+  s.on('demo:real_push', (data) => {
+    usePipelineStore.getState().addEvent({
+      type: 'push',
+      message: `Pushed ${data.sha} to ${data.repo}: ${data.message}`,
+      githubUrl: `https://github.com/${data.repo}/commit/${data.sha}`,
+    });
   });
 
   return s;
